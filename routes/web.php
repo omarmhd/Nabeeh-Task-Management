@@ -1,6 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Session;
+
+use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,11 +16,18 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['web_auth'])->group(function () {
+    Route::get("tasks", [\App\Http\Controllers\TaskController::class, "index"])->name("web.tasks.index");
     Route::get('/', function () {
         return view('tasks.index');
     });
-    Route::get("tasks", [TaskController::class, "index"])->name("web.tasks.index");
 });
-//
+Route::post('/store-token', function (Request $request) {
+    $token = $request->token;
+    if ($token) {
+        Session::put('auth_token', $token);
+        return response()->json(['message' => 'Token stored in session.']);
+    }
+    return response()->json(['error' => 'Token is missing'], 400);
+})->name('web.storeToken');
 Route::get('/login', [\App\Http\Controllers\AuthController::class, 'loginPage'])->name('login');

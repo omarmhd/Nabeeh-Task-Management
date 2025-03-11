@@ -123,31 +123,54 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     $(document).ready(function() {
+        //login form is submitted
         $('#loginForm').submit(function(e) {
             e.preventDefault();
 
+            // Set the CSRF token for security
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            });
+
+            // Send  request to the API login route
             $.ajax({
                 url: '{{ route("api.login") }}',
                 type: 'POST',
                 data: {
                     email: $('#email').val(),
-                    password: $('#password').val(),
-                    _token: '{{ csrf_token() }}'
+                    password: $('#password').val()
                 },
                 success: function(response) {
+                    // If login is successful and token is received
                     if (response.token) {
                         localStorage.setItem('auth_token', response.token);
-                        window.location.href = '{{ route("web.tasks.index") }}';
+
+                        // Send token to Laravel session --backend)
+                        $.ajax({
+                            url: '{{ route("web.storeToken") }}', //Route to store token in session
+                            type: 'POST',
+                            data: { token: response.token },
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            success: function() {
+                                window.location.href = '{{ route("web.tasks.index") }}';
+                            }
+                        });
                     } else {
                         alert('Invalid credentials');
                     }
                 },
                 error: function() {
-                    alert('Login failed.check your credentials');
+                    alert('Login failed. Check your credentials.');
                 }
             });
         });
     });
+
+
 </script>
 </body>
 </html>
